@@ -1,5 +1,5 @@
 # Add this site block to the existing Caddyfile after the MinIO site.
-sync.superxuniziyuan.win {
+__LIVESYNC_DOMAIN__ {
   request_body {
     max_size 4GB
   }
