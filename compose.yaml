@@ -1,0 +1,41 @@
+services:
+  couchdb:
+    image: ${COUCHDB_IMAGE}
+    container_name: ${COMPOSE_PROJECT_NAME}-couchdb
+    restart: unless-stopped
+    init: true
+    environment:
+      COUCHDB_USER: ${COUCHDB_ADMIN_USER}
+      COUCHDB_PASSWORD: ${COUCHDB_ADMIN_PASSWORD}
+      COUCHDB_SECRET: ${COUCHDB_SECRET}
+      NODENAME: couchdb@127.0.0.1
+    volumes:
+      - ${COUCHDB_DATA_DIR}:/opt/couchdb/data
+      - ./config/couchdb/local.ini:/opt/couchdb/etc/local.d/obsidian-livesync.ini:ro
+    expose:
+      - "5984"
+    networks:
+      - backend
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -u \"$${COUCHDB_USER}:$${COUCHDB_PASSWORD}\" http://127.0.0.1:5984/_up >/dev/null"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    mem_limit: ${COUCHDB_MEMORY_LIMIT:-1g}
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m
+        max-file: "3"
+        compress: "true"
+
+networks:
+  backend:
+    name: ${COMPOSE_PROJECT_NAME}-backend
+    internal: true
+  proxy:
+    name: obsidian-livesync-proxy
