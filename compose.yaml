@@ -39,3 +39,4 @@ networks:
     internal: true
   proxy:
     name: obsidian-livesync-proxy
+    external: true
