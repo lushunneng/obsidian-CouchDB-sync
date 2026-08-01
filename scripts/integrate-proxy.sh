@@ -3,6 +3,7 @@ set -euo pipefail
 source "$(cd -- "$(dirname -- "$0")" && pwd)/lib.sh"
 load_env
 require_env LIVESYNC_DOMAIN BACKUP_DIR COUCHDB_ADMIN_USER COUCHDB_ADMIN_PASSWORD COMPOSE_PROJECT_NAME
+CADDY_IMAGE="caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648"
 MINIO_PROJECT_DIR="${MINIO_PROJECT_DIR:-/opt/obsidian-minio-sync}"
 MINIO_COMPOSE_FILE="${MINIO_PROJECT_DIR}/docker-compose.yml"
 CADDYFILE="${MINIO_PROJECT_DIR}/caddy/Caddyfile"
@@ -23,7 +24,7 @@ rollback() {
   cp --preserve=mode,ownership,timestamps "$backup_dir/Caddyfile" "$CADDYFILE"
   compose_minio up -d --no-deps --no-build caddy >/dev/null 2>&1 || true
 }
-python3 - "$MINIO_COMPOSE_FILE" "$CADDYFILE" "$ROOT_DIR/config/proxy/caddy-livesync.Caddyfile" "$LIVESYNC_DOMAIN" <<'PY'
+python3 - "$MINIO_COMPOSE_FILE" "$CADDYFILE" "$ROOT_DIR/config/proxy/caddy-livesync.Caddyfile" "$LIVESYNC_DOMAIN" "$CADDY_IMAGE" <<'PY'
 from pathlib import Path
 import re
 import sys
@@ -32,11 +33,22 @@ compose_path = Path(sys.argv[1])
 caddy_path = Path(sys.argv[2])
 fragment_path = Path(sys.argv[3])
 domain = sys.argv[4]
+caddy_image = sys.argv[5]
 compose = compose_path.read_text()
 match = re.search(r"(?ms)^  caddy:\n.*?(?=^  [A-Za-z0-9_-]+:|^networks:)", compose)
 if not match:
     raise SystemExit("cannot locate caddy service")
 service = match.group(0)
+service, image_replacements = re.subn(
+    r"(?m)^    image: caddy:[^\n]+$",
+    f"    image: {caddy_image}",
+    service,
+    count=1,
+)
+if image_replacements != 1:
+    raise SystemExit("cannot locate Caddy image reference")
+if "    init: true\n" not in service:
+    service = service.replace("    restart: unless-stopped\n", "    restart: unless-stopped\n    init: true\n", 1)
 if "      - livesync_proxy\n" not in service:
     service = service.replace("    networks:\n      - syncnet\n", "    networks:\n      - syncnet\n      - livesync_proxy\n", 1)
     compose = compose[:match.start()] + service + compose[match.end():]
@@ -52,7 +64,7 @@ PY
 domain_value="$(sed -n 's/^DOMAIN=//p' "${MINIO_PROJECT_DIR}/.env" | head -1)"
 [ -n "$domain_value" ] || die "missing existing MinIO DOMAIN"
 docker compose -f "$MINIO_COMPOSE_FILE" --env-file "${MINIO_PROJECT_DIR}/.env" config >/dev/null
-docker run --rm --network none -e "DOMAIN=${domain_value}" -v "${CADDYFILE}:/etc/caddy/Caddyfile:ro" caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null || { rollback; die "Caddy validation failed; proxy files restored"; }
+docker run --rm --network none -e "DOMAIN=${domain_value}" -v "${CADDYFILE}:/etc/caddy/Caddyfile:ro" "$CADDY_IMAGE" caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null || { rollback; die "Caddy validation failed; proxy files restored"; }
 compose_minio up -d --no-deps --no-build caddy >/dev/null || { rollback; die "Caddy restart failed; proxy files restored"; }
 for attempt in $(seq 1 60); do [ "$(docker inspect -f '{{.State.Health.Status}}' obsidian-minio-caddy 2>/dev/null || true)" = healthy ] && break; sleep 2; done
 [ "$(docker inspect -f '{{.State.Health.Status}}' obsidian-minio-caddy)" = healthy ] || { rollback; die "Caddy did not become healthy; proxy files restored"; }

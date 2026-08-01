@@ -25,4 +25,7 @@ Never use the MinIO project directory for CouchDB data. Before an image update,
 make a verified backup, inspect the release notes, pin the new image, run
 `compose config`, then recreate only this project and validate it. Do not use
 `latest` or automatic update agents. Caddy changes require a backup, syntax
-check, and graceful reload; verify MinIO immediately afterward.
+check, and graceful reload; verify MinIO immediately afterward. The proxy
+integration script pins Caddy to `2.11.4-alpine` plus its verified digest and
+enables `init: true`; update both the tag and digest together after reviewing a
+future official Caddy release.
