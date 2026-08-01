@@ -17,3 +17,7 @@ obsidian-livesync project
 The new Compose project has an internal backend network and a dedicated proxy
 network. CouchDB has no `ports` mapping, so host port `5984` remains closed.
 MinIO volumes and the MinIO Compose project are never reused.
+
+The official pinned LiveSync provisioning utility applies authenticated access,
+CORS, request/document limits, and database-version negotiation through the
+CouchDB API after the container starts.

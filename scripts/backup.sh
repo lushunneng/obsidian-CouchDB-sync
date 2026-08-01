@@ -3,7 +3,7 @@ set -euo pipefail
 source "$(cd -- "$(dirname -- "$0")" && pwd)/lib.sh"
 require_cmd tar
 load_env
-require_env COUCHDB_DATA_DIR BACKUP_DIR
+require_env COMPOSE_PROJECT_NAME COUCHDB_DATA_DIR BACKUP_DIR
 [ -d "$COUCHDB_DATA_DIR" ] || die "CouchDB data directory does not exist"
 mkdir -p "$BACKUP_DIR"
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"

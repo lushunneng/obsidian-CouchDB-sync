@@ -1,0 +1,5 @@
+Source repository: https://github.com/vrtmrz/obsidian-livesync
+Reviewed commit: e32e3f545e367c53e66bbc999b73a564c036a30e
+Reviewed utility: utils/couchdb/couchdb-init.sh and utils/couchdb/provision.ts
+Pinned Commonlib: 0.1.0-rc.4
+The provisioning utility is vendored to avoid executing an unreviewed remote script.

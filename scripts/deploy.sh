@@ -23,6 +23,7 @@ for attempt in $(seq 1 30); do
   sleep 2
 done
 [ "$(docker inspect -f '{{.State.Health.Status}}' "${COMPOSE_PROJECT_NAME}-couchdb")" = healthy ] || die "CouchDB did not become healthy"
+"${ROOT_DIR}/scripts/provision.sh"
 compose ps
 printf 'image_id='; docker image inspect "$COUCHDB_IMAGE" -f '{{.Id}}'
 printf 'image_digest='; docker image inspect "$COUCHDB_IMAGE" -f '{{index .RepoDigests 0}}' 2>/dev/null || true

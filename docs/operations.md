@@ -7,6 +7,7 @@ also requires the existing Caddy project to attach its container to
 
 ```sh
 ./scripts/preflight.sh
+./scripts/provision.sh
 docker compose --env-file .env -f compose.yaml ps
 docker compose --env-file .env -f compose.yaml logs --tail=100 couchdb
 ./scripts/validate.sh

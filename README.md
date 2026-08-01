@@ -12,6 +12,7 @@ chmod 600 .env
 # Fill .env with secrets; never commit it.
 ./scripts/preflight.sh
 ./scripts/deploy.sh
+./scripts/integrate-proxy.sh
 ./scripts/validate.sh
 ```
 

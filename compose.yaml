@@ -8,10 +8,9 @@ services:
       COUCHDB_USER: ${COUCHDB_ADMIN_USER}
       COUCHDB_PASSWORD: ${COUCHDB_ADMIN_PASSWORD}
       COUCHDB_SECRET: ${COUCHDB_SECRET}
-      NODENAME: couchdb@127.0.0.1
+      NODENAME: 127.0.0.1
     volumes:
       - ${COUCHDB_DATA_DIR}:/opt/couchdb/data
-      - ./config/couchdb/local.ini:/opt/couchdb/etc/local.d/obsidian-livesync.ini:ro
     expose:
       - "5984"
     networks:
